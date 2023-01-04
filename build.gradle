@@ -60,7 +60,6 @@ subprojects {
     compileJava.options.encoding = 'utf-8'
     tasks.withType(JavaCompile) {
         options.encoding = 'utf-8'
-        options.deprecation = true
     }
 }
 

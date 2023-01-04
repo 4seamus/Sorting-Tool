@@ -4,22 +4,34 @@ import java.util.*;
 
 public class Main {
     public static void main(final String[] args) {
+        // retaining: may be useful for validation // TODO retire or use
+        // EnumSet<CliParametersValue> dataTypeValues = EnumSet.of(CliParametersValue.WORD, CliParametersValue.LONG, CliParametersValue.LINE);
         Scanner scanner = new Scanner(System.in);
         Map<String, Integer> inputCaptured;
-        String opMode = args.length < 2 ? "word" : args[1];
+
+        boolean sortRequested = Arrays.asList(args).contains(CliParameter.SORTINTEGERS.getCliParameter());
+
+        List<String> cliArgumentList = Arrays.asList(args);
+        String dataTypeParameter = CliParameter.DATATYPE.getCliParameter();
+        int positionOfDataTypeParameter = cliArgumentList.indexOf(dataTypeParameter);
+        CliParameterValue operationMode = cliArgumentList.contains(dataTypeParameter) ?
+                CliParameterValue.valueOf(cliArgumentList.get(positionOfDataTypeParameter + 1).toUpperCase()) : CliParameterValue.WORD;
+
+        // if the -sortIntegers argument is provided, ignore other arguments
+        if (sortRequested) operationMode = CliParameterValue.LONG;
 
         // handle input
-        inputCaptured = switch (opMode) {
-            case "line" -> readLines(scanner);
-            default -> readTokens(scanner);
+        inputCaptured = switch (operationMode) {
+            case LINE -> readLines(scanner);
+            case WORD, LONG -> readTokens(scanner);
         };
 
         // handle output
-        switch (opMode) {
-            case "line" -> processLine(inputCaptured);
-            case "word" -> processWord(inputCaptured);
-            case "long" -> processLong(inputCaptured);
-            default -> processWord(inputCaptured);
+        switch (operationMode) {
+            case LINE -> processLine(inputCaptured);
+            case WORD -> processWord(inputCaptured);
+            case LONG -> processLong(inputCaptured, sortRequested);
+            default -> throw new RuntimeException("Invalid parameter value: " + operationMode);
         }
     }
 
@@ -49,13 +61,29 @@ public class Main {
         return lines;
     }
 
-    static void processLong(Map<String, Integer> inputCaptured) {
+    static void processLong(Map<String, Integer> inputCaptured, boolean sortRequested) {
         int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
         System.out.printf("Total numbers: %d.\n", inputCount);
-        long maxInput = inputCaptured.keySet().stream().mapToLong(Long::valueOf).max().orElse(0);
-        int numOfOccurrences = inputCaptured.get(String.valueOf(maxInput));
-        System.out.printf("The greatest number: %d (%d time(s), %.0f%%).\n",
-                maxInput, numOfOccurrences, (numOfOccurrences / (double) inputCount * 100));
+
+        if (sortRequested) {
+            StringBuilder valuesSorted = new StringBuilder();
+            long[] numbers = inputCaptured.keySet().stream()
+                    .mapToLong(Long::parseLong)
+                    .sorted().toArray();
+
+            // map compresses entry (list of values -> value : count), uncompress for output
+            for (long n : numbers) {
+                for (long i = 0; i < inputCaptured.get(String.valueOf(n)); i++) {
+                    valuesSorted.append(n).append(" ");
+                }
+            }
+            System.out.println("Sorted data: " + valuesSorted);
+        } else {
+            long maxInput = inputCaptured.keySet().stream().mapToLong(Long::valueOf).max().orElse(0);
+            int numOfOccurrences = inputCaptured.get(String.valueOf(maxInput));
+            System.out.printf("The greatest number: %d (%d time(s), %.0f%%).\n",
+                    maxInput, numOfOccurrences, (numOfOccurrences / (double) inputCount * 100));
+        }
     }
 
     static void processWord(Map<String, Integer> inputCaptured) {
