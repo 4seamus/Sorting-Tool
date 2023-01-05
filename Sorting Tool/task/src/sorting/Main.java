@@ -2,36 +2,40 @@ package sorting;
 
 import java.util.*;
 
+// TODO add logging via JUL
 public class Main {
     public static void main(final String[] args) {
-        // retaining: may be useful for validation // TODO retire or use
+        // retaining: may be useful for validation // TODO retire or refactor
         // EnumSet<CliParametersValue> dataTypeValues = EnumSet.of(CliParametersValue.WORD, CliParametersValue.LONG, CliParametersValue.LINE);
         Scanner scanner = new Scanner(System.in);
         Map<String, Integer> inputCaptured;
 
-        boolean sortRequested = Arrays.asList(args).contains(CliParameter.SORTINTEGERS.getCliParameter());
-
         List<String> cliArgumentList = Arrays.asList(args);
+        // parse dataType argument, default to 'word' if not provided
         String dataTypeParameter = CliParameter.DATATYPE.getCliParameter();
         int positionOfDataTypeParameter = cliArgumentList.indexOf(dataTypeParameter);
-        CliParameterValue operationMode = cliArgumentList.contains(dataTypeParameter) ?
+        CliParameterValue dataType = cliArgumentList.contains(dataTypeParameter) ?
                 CliParameterValue.valueOf(cliArgumentList.get(positionOfDataTypeParameter + 1).toUpperCase()) : CliParameterValue.WORD;
 
-        // if the -sortIntegers argument is provided, ignore other arguments
-        if (sortRequested) operationMode = CliParameterValue.LONG;
+        // parse sortingType argument, default to 'natural' if not provided
+        String sortingTypeParameter = CliParameter.SORTINGTYPE.getCliParameter();
+        int positionOfSortingTypeParameter = cliArgumentList.indexOf(sortingTypeParameter);
+        CliParameterValue sortingType = cliArgumentList.contains(sortingTypeParameter) ?
+                CliParameterValue.valueOf(cliArgumentList.get(positionOfSortingTypeParameter + 1).toUpperCase()) : CliParameterValue.NATURAL;
 
         // handle input
-        inputCaptured = switch (operationMode) {
+        inputCaptured = switch (dataType) {
             case LINE -> readLines(scanner);
             case WORD, LONG -> readTokens(scanner);
+            default -> readTokens(scanner);
         };
 
         // handle output
-        switch (operationMode) {
-            case LINE -> processLine(inputCaptured);
-            case WORD -> processWord(inputCaptured);
-            case LONG -> processLong(inputCaptured, sortRequested);
-            default -> throw new RuntimeException("Invalid parameter value: " + operationMode);
+        switch (dataType) {
+            case LINE -> processLine(inputCaptured, sortingType);
+            case WORD -> processWord(inputCaptured, sortingType);
+            case LONG -> processLong(inputCaptured, sortingType);
+            default -> throw new RuntimeException("Invalid parameter value: " + dataType);
         }
     }
 
@@ -61,72 +65,70 @@ public class Main {
         return lines;
     }
 
-    static void processLong(Map<String, Integer> inputCaptured, boolean sortRequested) {
+    static void processLong(Map<String, Integer> inputCaptured, CliParameterValue sortingType) {
         int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
         System.out.printf("Total numbers: %d.\n", inputCount);
 
-        if (sortRequested) {
-            StringBuilder valuesSorted = new StringBuilder();
-            long[] numbers = inputCaptured.keySet().stream()
-                    .mapToLong(Long::parseLong)
-                    .sorted().toArray();
+        if (sortingType == CliParameterValue.NATURAL) {
+            System.out.print("Sorted data:");
 
-            // map compresses entry (list of values -> value : count), uncompress for output
-            for (long n : numbers) {
-                for (long i = 0; i < inputCaptured.get(String.valueOf(n)); i++) {
-                    valuesSorted.append(n).append(" ");
-                }
-            }
-            System.out.println("Sorted data: " + valuesSorted);
+            inputCaptured.keySet().stream()
+                    .mapToLong(Long::parseLong)
+                    .sorted()
+                    .forEach(key -> System.out.print((" " + key).repeat(inputCaptured.get(String.valueOf(key)))));
+            System.out.println();
         } else {
-            long maxInput = inputCaptured.keySet().stream().mapToLong(Long::valueOf).max().orElse(0);
-            int numOfOccurrences = inputCaptured.get(String.valueOf(maxInput));
-            System.out.printf("The greatest number: %d (%d time(s), %.0f%%).\n",
-                    maxInput, numOfOccurrences, (numOfOccurrences / (double) inputCount * 100));
+            printNumericByCount(inputCaptured);
         }
     }
 
-    static void processWord(Map<String, Integer> inputCaptured) {
+    static void processWord(Map<String, Integer> inputCaptured, CliParameterValue sortingType) {
         int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
         System.out.printf("Total words: %d.\n", inputCount);
 
-        int maxLength = inputCaptured.keySet().stream()
-                .mapToInt(String::length)
-                //.filter(input -> input >= 0)
-                .max()
-                .orElse(0);
-
-        List<String> maxInput = inputCaptured.keySet().stream()
-                .filter(i -> i.length() == maxLength)
-                .sorted()
-                .toList();
-
-        for (String input : maxInput) {
-            int numOfOccurrences = inputCaptured.get(input);
-            System.out.printf("The longest word: %s (%d time(s), %.0f%%).\n",
-                    input, numOfOccurrences, (numOfOccurrences / (double) inputCount * 100));
+        if (sortingType == CliParameterValue.NATURAL) {
+            System.out.print("Sorted data:");
+            inputCaptured.keySet().stream()
+                    .sorted()
+                    .forEach(key -> System.out.print((" " + key).repeat(inputCaptured.get(key))));
+        } else {
+            printAlphaByCount(inputCaptured);
         }
     }
 
-    static void processLine(Map<String, Integer> inputCaptured) {
+    static void processLine(Map<String, Integer> inputCaptured, CliParameterValue sortingType) {
         int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
         System.out.printf("Total lines: %d.\n", inputCount);
 
-        int maxLength = inputCaptured.keySet().stream()
-                .mapToInt(String::length)
-                //.filter(input -> input >= 0)
-                .max()
-                .orElse(0);
-
-        List<String> maxInput = inputCaptured.keySet().stream()
-                .filter(i -> i.length() == maxLength)
-                .sorted()
-                .toList();
-
-        for (String input : maxInput) {
-            int numOfOccurrences = inputCaptured.get(input);
-            System.out.printf("The longest line:\n%s\n(%d time(s), %.0f%%).\n",
-                    input, numOfOccurrences, (numOfOccurrences / (double) inputCount * 100));
+        if (sortingType == CliParameterValue.NATURAL) {
+            System.out.println("Sorted data:");
+            inputCaptured.keySet().stream()
+                    //.sorted(Comparator.comparingInt(String::length)) // sort by line length
+                    .sorted() // spec requires natural sorting after stage 4 for lines
+                    .forEach(key -> System.out.println(key.repeat(inputCaptured.get(key))));
+        } else {
+            printAlphaByCount(inputCaptured);
         }
+    }
+
+    private static void printAlphaByCount(Map<String, Integer> inputCaptured) {
+        int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
+        // reverse sort inputCaptured by values, print stats as per spec
+        inputCaptured.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry<String, Integer>::getValue)
+                        .thenComparing(Map.Entry::getKey))
+                .forEach(entry -> System.out.printf("%s: %d time(s), %.0f%%\n",
+                        entry.getKey(), entry.getValue(), (entry.getValue() / (double) inputCount * 100)));
+    }
+
+    private static void printNumericByCount(Map<String, Integer> inputCaptured) {
+        int inputCount = inputCaptured.values().stream().reduce(0, Integer::sum);
+        inputCaptured.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry<String, Integer>::getValue)
+                        .thenComparing(entry -> Long.parseLong(entry.getKey())))
+                // .sorted(Comparator.comparingLong((Map.Entry<String, Integer> entry) -> Long.parseLong(entry.getKey()))
+                //         .thenComparing(Map.Entry::getValue))
+                .forEach(entry -> System.out.printf("%s: %d time(s), %.0f%%\n",
+                        entry.getKey(), entry.getValue(), (entry.getValue() / (double) inputCount * 100)));
     }
 }

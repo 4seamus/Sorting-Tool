@@ -2,7 +2,7 @@ package sorting;
 
 public enum CliParameter {
     DATATYPE("-dataType"),
-    SORTINTEGERS("-sortIntegers");
+    SORTINGTYPE("-sortingType");
 
     private final String cliParameter;
 
