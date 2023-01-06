@@ -1,4 +1,4 @@
-package sorting;
+package sorting.common;
 
 public enum CliParameter {
     DATATYPE("-dataType"),
