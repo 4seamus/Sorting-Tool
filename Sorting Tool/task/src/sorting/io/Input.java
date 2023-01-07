@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-public class Entry {
+public class Input {
     public static Map<String, Integer> readTokens(Scanner scanner, CliParameterValue dataType) {
         Map<String, Integer> tokens = new HashMap<>();
         while (scanner.hasNext()) {

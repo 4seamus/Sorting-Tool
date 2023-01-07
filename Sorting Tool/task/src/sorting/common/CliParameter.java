@@ -2,7 +2,9 @@ package sorting.common;
 
 public enum CliParameter {
     DATATYPE("-dataType"),
-    SORTINGTYPE("-sortingType");
+    SORTINGTYPE("-sortingType"),
+    INPUTFILE("-inputFile"),
+    OUTPUTFILE("-outputFile");
 
     private final String cliParameter;
 

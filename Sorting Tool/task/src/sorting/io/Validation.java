@@ -3,6 +3,9 @@ package sorting.io;
 import sorting.common.CliParameter;
 import sorting.common.CliParameterValue;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class Validation { // parse and validate CLI parameters
@@ -65,5 +68,28 @@ public class Validation { // parse and validate CLI parameters
         // default sorting type is 'natural'
         return cliArgumentList.contains(sortingTypeParameter) ?
                 CliParameterValue.valueOf(cliArgumentList.get(positionOfSortingTypeParameter + 1).toUpperCase()) : CliParameterValue.NATURAL;
+    }
+
+    public static Scanner configureScanner(String[] args) {
+        List<String> cliArgumentList = Arrays.asList(args);
+        String inputFileParameter = CliParameter.INPUTFILE.getCliParameter();
+        int positionOfInputFileParameter = cliArgumentList.indexOf(inputFileParameter);
+
+        return cliArgumentList.contains(inputFileParameter) ?
+                new Scanner(cliArgumentList.get(positionOfInputFileParameter + 1)) : new Scanner(System.in);
+    }
+
+    public static PrintWriter configureOutput(String[] args) throws FileNotFoundException {
+        List<String> cliArgumentList = Arrays.asList(args);
+        String outputFileParameter = CliParameter.OUTPUTFILE.getCliParameter();
+        int positionOfOutputFileParameter = cliArgumentList.indexOf(outputFileParameter);
+
+        PrintWriter printWriter = new PrintWriter(System.out, true);
+        if (cliArgumentList.contains(outputFileParameter)) {
+            String fileName = cliArgumentList.get(positionOfOutputFileParameter + 1);
+            FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+            printWriter = new PrintWriter(fileOutputStream, true);
+        }
+        return printWriter;
     }
 }
